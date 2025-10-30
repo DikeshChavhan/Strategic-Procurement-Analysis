@@ -79,5 +79,4 @@ if st.sidebar.button("Predict Category"):
 # ---------------------------
 # Footer
 # ---------------------------
-st.markdown("---")
-st.caption("Developed by **Dikesh Chavhan** |
+st.caption("Developed by **Dikesh Chavhan** | Strategic Procurement ML Project (2025)")

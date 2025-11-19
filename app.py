@@ -1,46 +1,36 @@
-# app.py
+# app.py — Cleaned Version (No PDF)
+
 import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
 import os
-import io
-import base64
-from datetime import datetime
-
-# plotting
 import matplotlib.pyplot as plt
-
-# PDF generation (optional; add "fpdf" to requirements.txt for PDF export)
-try:
-    from fpdf import FPDF
-    FPDF_AVAILABLE = True
-except Exception:
-    FPDF_AVAILABLE = False
+from datetime import datetime
 
 # ---------------------------
 # App Config
 # ---------------------------
-st.set_page_config(page_title="Kraljic Matrix Classifier (Upgraded)", layout="wide")
-st.title("🧠 Kraljic Matrix Classification — Upgraded")
+st.set_page_config(page_title="Kraljic Matrix Classifier", layout="wide")
+st.title("🧠 Kraljic Matrix Classification — Simplified & Cleaned")
 st.markdown(
-    "A more realistic procurement tool — India-focused regions, batch CSV upload, visualizations, "
-    "recommendations, and downloadable reports."
+    "A practical procurement classification app using the **Kraljic Matrix**. "
+    "Includes Indian supplier regions, batch CSV upload, charts, recommendations, "
+    "and a clean UI—no PDF generation."
 )
 
 # ---------------------------
-# Model loading & expected features
+# Model loading
 # ---------------------------
 MODEL_PATH = "naive_bayes_model.pkl"
-MODEL_COLUMNS_PATH = "model_columns.pkl"  # optional (saved during training)
+MODEL_COLUMNS_PATH = "model_columns.pkl"
 
 if not os.path.exists(MODEL_PATH):
-    st.error(f"Model file '{MODEL_PATH}' not found. Put it in the same folder as app.py and restart.")
+    st.error(f"❌ Model file '{MODEL_PATH}' not found in app folder.")
     st.stop()
 
 model = joblib.load(MODEL_PATH)
 
-# Determine the expected feature names (prefer saved list)
 default_model_columns = [
     "Lead_Time_Days",
     "Order_Volume_Units",
@@ -53,125 +43,67 @@ default_model_columns = [
 
 if os.path.exists(MODEL_COLUMNS_PATH):
     try:
-        model_columns = joblib.load(MODEL_COLUMNS_PATH)
-        # ensure it's a list-like
-        model_columns = list(model_columns)
-    except Exception:
+        model_columns = list(joblib.load(MODEL_COLUMNS_PATH))
+    except:
         model_columns = default_model_columns
 else:
     model_columns = default_model_columns
 
 # ---------------------------
-# Sidebar: Input / Batch Upload
+# Sidebar Input Settings
 # ---------------------------
 st.sidebar.header("Input / Batch Options")
-
 mode = st.sidebar.radio("Mode", ["Single item", "Batch upload (CSV)"])
 
-# Common: Indian-focused region list (but NOTE: region is NOT used for prediction unless model trained on it)
 REGIONS = [
     "Maharashtra", "Gujarat", "Karnataka", "Delhi NCR", "Tamil Nadu",
     "West Bengal", "Rajasthan", "Uttar Pradesh", "Kerala", "Punjab",
     "China", "Bangladesh", "GCC", "USA", "Europe", "Other"
 ]
 
-if mode == "Single item":
-    # Sidebar: single item inputs
-    st.sidebar.subheader("Procurement Item Details (Single)")
-
-    lead_time = st.sidebar.number_input("Lead Time (Days)", min_value=0, max_value=3650, value=30, step=1)
-    order_volume = st.sidebar.number_input("Order Volume (Units)", min_value=1, max_value=10_000_000, value=500, step=1)
-    cost_per_unit = st.sidebar.number_input("Cost per Unit (₹)", min_value=0.0, max_value=10_000_000.0, value=250.0, format="%.2f")
-    supply_risk = st.sidebar.slider("Supply Risk Score (1=Low, 5=High)", 1, 5, 3)
-    profit_impact = st.sidebar.slider("Profit Impact Score (1=Low, 5=High)", 1, 5, 3)
-    env_impact = st.sidebar.slider("Environmental Impact Score (1=Low, 5=High)", 1, 5, 2)
-    region = st.sidebar.selectbox("Supplier Region (for reporting)", REGIONS)
-    single_source = st.sidebar.selectbox("Single Source Risk?", ["Yes", "No"])
-
-    # quick input validation settings in sidebar
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("**Validation rules**")
-    st.sidebar.write("- Lead time should be realistic (0–3650 days)")
-    st.sidebar.write("- Cost & order volume should be non-negative")
-
-else:
-    st.sidebar.subheader("Batch CSV Upload")
-    st.sidebar.markdown(
-        "Upload a CSV with columns matching (or containing) at least these: "
-        "`Lead_Time_Days`, `Order_Volume_Units`, `Cost_per_Unit`, "
-        "`Supply_Risk_Score`, `Profit_Impact_Score`, `Environmental_Impact`, `Single_Source_Risk`."
-    )
-    uploaded_file = st.sidebar.file_uploader("Upload CSV", type=["csv"])
-    sample_button = st.sidebar.button("Download sample CSV")
-
-    if sample_button:
-        # create sample csv
-        sample_df = pd.DataFrame({
-            "Lead_Time_Days": [30, 90],
-            "Order_Volume_Units": [500, 10000],
-            "Cost_per_Unit": [250.0, 12.5],
-            "Supply_Risk_Score": [3, 4],
-            "Profit_Impact_Score": [3, 5],
-            "Environmental_Impact": [2, 4],
-            "Single_Source_Risk": [1, 0],
-            "Supplier_Region": ["Maharashtra", "China"],
-            "Product_Name": ["Item A", "Item B"]
-        })
-        csv_bytes = sample_df.to_csv(index=False).encode()
-        st.sidebar.download_button("Download sample CSV", data=csv_bytes, file_name="sample_kraljic_upload.csv", mime="text/csv")
-
 # ---------------------------
-# Utility functions
+# Helper Functions
 # ---------------------------
 def validate_single_input(ld, vol, cost):
     errors = []
     if ld < 0:
-        errors.append("Lead time cannot be negative.")
+        errors.append("Lead time must be ≥ 0.")
     if vol <= 0:
         errors.append("Order volume must be > 0.")
     if cost <= 0:
         errors.append("Cost per unit must be > 0.")
     return errors
 
+
 def prepare_input_df(df_row):
-    """
-    Ensure df_row (DataFrame with single row or many rows) aligns with model_columns.
-    - Drop Supplier_Region if present
-    - Convert Single_Source_Risk Yes/No to 1/0 if necessary
-    - Reindex columns to model_columns (fill missing with 0)
-    """
     df = df_row.copy()
 
     if "Supplier_Region" in df.columns:
         df = df.drop(columns=["Supplier_Region"], errors="ignore")
 
-    # Convert Single_Source_Risk values
+    # Convert Yes/No to 1/0
     if "Single_Source_Risk" in df.columns:
-        df["Single_Source_Risk"] = df["Single_Source_Risk"].map({ "Yes": 1, "No": 0, "yes":1, "no":0 }).fillna(df["Single_Source_Risk"])
-        # If it's boolean True/False, convert to int
-        if df["Single_Source_Risk"].dtype == bool:
-            df["Single_Source_Risk"] = df["Single_Source_Risk"].astype(int)
+        df["Single_Source_Risk"] = df["Single_Source_Risk"].map(
+            {"Yes": 1, "No": 0}
+        ).fillna(df["Single_Source_Risk"])
 
-    # Ensure numeric columns exist, fill missing with 0 (or better: median) — Here we fill with 0 to avoid errors
+    # Align columns
     final_df = df.reindex(columns=model_columns, fill_value=0)
     return final_df
 
+
 def predict_and_attach(df_inputs):
-    """
-    df_inputs: prepared DataFrame aligned to model_columns
-    returns: predictions, probabilities (if available)
-    """
     preds = model.predict(df_inputs)
     proba = None
     if hasattr(model, "predict_proba"):
         try:
             proba = model.predict_proba(df_inputs)
-        except Exception:
-            proba = None
+        except:
+            pass
     return preds, proba
 
+
 def category_color(cat):
-    """Return a color badge and emoji for category"""
     mapping = {
         "Strategic": ("🔴", "#ff4b4b"),
         "Leverage": ("🔵", "#4b7bff"),
@@ -180,105 +112,70 @@ def category_color(cat):
     }
     return mapping.get(cat, ("⚪", "#999999"))
 
+
 def recommendations_for_category(cat):
-    """Actionable recommendations for procurement teams"""
     recs = {
         "Strategic": [
-            "Establish long-term partnerships and supplier development plans.",
-            "Consider joint forecasting, collaborative risk mitigation and safety stocks.",
-            "Prioritize supplier performance monitoring and contingency planning."
+            "Build long-term partnerships.",
+            "Create joint forecasting and risk mitigation plans.",
+            "Invest in supplier development."
         ],
         "Leverage": [
-            "Run competitive bidding and volume consolidation to reduce unit costs.",
-            "Leverage multiple suppliers to negotiate better terms.",
-            "Use dynamic sourcing and reverse auctions where possible."
+            "Use competitive bidding.",
+            "Optimize negotiation strategies.",
+            "Consolidate volumes for better pricing."
         ],
         "Bottleneck": [
-            "Diversify suppliers and build redundancy for critical inputs.",
-            "Consider safety stocks and increase monitoring of supplier health.",
-            "Evaluate alternative materials or redesign to reduce dependency."
+            "Develop backup suppliers.",
+            "Increase safety stock.",
+            "Explore substitute materials."
         ],
         "Non-Critical": [
-            "Automate procurement and use catalog management to reduce PO overhead.",
-            "Standardize items and use long-term contracts for efficiency.",
-            "Consider vendor-managed inventory for low-impact items."
+            "Automate purchasing (catalog buying).",
+            "Focus on process efficiency.",
+            "Use long-term contracts for low-value items."
         ]
     }
-    return recs.get(cat, ["No specific recommendation available."])
-
-def create_pdf_report(single_input_row, predicted_category, proba=None):
-    """
-    Create a simple single-page PDF summarizing the input & prediction.
-    Returns bytes of PDF.
-    """
-    if not FPDF_AVAILABLE:
-        return None
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    pdf.cell(0, 10, "Kraljic Matrix — Procurement Risk Report", ln=True, align="C")
-    pdf.ln(4)
-    pdf.set_font("Arial", size=10)
-    pdf.cell(0, 8, f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", ln=True)
-    pdf.ln(6)
-
-    # Input Table
-    pdf.set_font("Arial", style="B", size=11)
-    pdf.cell(0, 8, "Input Summary:", ln=True)
-    pdf.set_font("Arial", size=10)
-    for col, val in single_input_row.items():
-        pdf.cell(0, 7, f"- {col}: {val}", ln=True)
-
-    pdf.ln(4)
-    pdf.set_font("Arial", style="B", size=11)
-    pdf.cell(0, 8, f"Predicted Kraljic Category: {predicted_category}", ln=True)
-    pdf.set_font("Arial", size=10)
-    if proba is not None:
-        pdf.ln(4)
-        pdf.cell(0, 8, "Predicted probabilities:", ln=True)
-        labels = list(model.classes_)
-        for lbl, p in zip(labels, proba):
-            pdf.cell(0, 7, f"- {lbl}: {p:.3f}", ln=True)
-
-    # Recommendations
-    pdf.ln(6)
-    pdf.set_font("Arial", style="B", size=11)
-    pdf.cell(0, 8, "Recommendations:", ln=True)
-    pdf.set_font("Arial", size=10)
-    recs = recommendations_for_category(predicted_category)
-    for r in recs:
-        pdf.multi_cell(0, 7, f"- {r}")
-
-    return pdf.output(dest="S").encode("latin-1")
+    return recs.get(cat, ["No recommendations available."])
 
 # ---------------------------
-# MAIN: Single Mode
+# SINGLE ITEM MODE
 # ---------------------------
 if mode == "Single item":
-    # Input validation
-    validation_errors = validate_single_input(lead_time, order_volume, cost_per_unit)
-    if validation_errors:
-        for err in validation_errors:
+
+    st.sidebar.subheader("Procurement Item Details")
+
+    lead_time = st.sidebar.number_input("Lead Time (Days)", 0, 3650, 30)
+    order_volume = st.sidebar.number_input("Order Volume (Units)", 1, 10_000_000, 500)
+    cost_per_unit = st.sidebar.number_input("Cost per Unit (₹)", 0.1, 10_000_000.0, 250.0)
+    supply_risk = st.sidebar.slider("Supply Risk Score", 1, 5, 3)
+    profit_impact = st.sidebar.slider("Profit Impact Score", 1, 5, 3)
+    env_impact = st.sidebar.slider("Environmental Impact Score", 1, 5, 2)
+    single_source = st.sidebar.selectbox("Single Source Risk?", ["Yes", "No"])
+    region = st.sidebar.selectbox("Supplier Region (India-focused)", REGIONS)
+
+    # validation
+    errors = validate_single_input(lead_time, order_volume, cost_per_unit)
+    if errors:
+        for err in errors:
             st.error(err)
         st.stop()
 
-    # Prepare dataframe for one row
+    # prepare DF
     input_df = pd.DataFrame({
-        "Lead_Time_Days": [int(lead_time)],
-        "Order_Volume_Units": [int(order_volume)],
-        "Cost_per_Unit": [float(cost_per_unit)],
-        "Supply_Risk_Score": [int(supply_risk)],
-        "Profit_Impact_Score": [int(profit_impact)],
-        "Environmental_Impact": [int(env_impact)],
+        "Lead_Time_Days": [lead_time],
+        "Order_Volume_Units": [order_volume],
+        "Cost_per_Unit": [cost_per_unit],
+        "Supply_Risk_Score": [supply_risk],
+        "Profit_Impact_Score": [profit_impact],
+        "Environmental_Impact": [env_impact],
         "Single_Source_Risk": [1 if single_source == "Yes" else 0],
-        # keep region & product name for report only (not used in prediction)
-        "Supplier_Region": [region]
+        "Supplier_Region": [region]  # used for display only
     })
 
     st.subheader("🔍 Input Summary")
     st.table(input_df.T)
 
-    # Predict
     if st.button("Predict Category"):
         try:
             prepared = prepare_input_df(input_df)
@@ -286,108 +183,90 @@ if mode == "Single item":
             category = preds[0]
 
             emoji, color = category_color(category)
-
-            # show colored result
-            st.markdown(f"### {emoji} Predicted Kraljic Category: **{category}**")
+            st.markdown(f"### {emoji} Predicted Category: **{category}**")
             st.markdown(f"<div style='background:{color};height:8px;border-radius:4px'></div>", unsafe_allow_html=True)
 
-            # show probabilities if available
+            # probabilities
             if proba is not None:
-                proba_series = pd.Series(proba[0], index=model.classes_).sort_values(ascending=False)
-                st.subheader("Model confidence (probabilities)")
+                st.subheader("Model Confidence")
+                proba_series = pd.Series(proba[0], index=model.classes_)
                 st.bar_chart(proba_series)
 
-            # show quadrant / heatmap (Profit Impact vs Supply Risk)
-            st.subheader("Kraljic Quadrant (Profit Impact vs Supply Risk)")
-            fig, ax = plt.subplots(figsize=(6,6))
-            # create 5x5 grid for 1-5 scales
-            ax.set_xlim(0.5,5.5); ax.set_ylim(0.5,5.5)
-            ax.set_xlabel("Profit Impact Score (1=Low → 5=High)")
-            ax.set_ylabel("Supply Risk Score (1=Low → 5=High)")
-            ax.set_xticks([1,2,3,4,5]); ax.set_yticks([1,2,3,4,5])
-            # draw quadrant lines at 3 (midpoint)
+            # quadrant chart
+            st.subheader("Kraljic Quadrant Position")
+            fig, ax = plt.subplots(figsize=(6, 6))
+            ax.set_xlim(0.5, 5.5)
+            ax.set_ylim(0.5, 5.5)
+            ax.set_xticks([1, 2, 3, 4, 5])
+            ax.set_yticks([1, 2, 3, 4, 5])
+            ax.set_xlabel("Profit Impact")
+            ax.set_ylabel("Supply Risk")
             ax.axvline(3, color="grey", linestyle="--")
             ax.axhline(3, color="grey", linestyle="--")
-            # annotate quadrants
-            ax.text(1.2,4.2,"Non-Critical", fontsize=10, color="green")
-            ax.text(3.2,4.2,"Leverage", fontsize=10, color="blue")
-            ax.text(1.2,1.2,"Bottleneck", fontsize=10, color="orange")
-            ax.text(3.2,1.2,"Strategic", fontsize=10, color="red")
-            # plot the point
-            px = input_df["Profit_Impact_Score"].iloc[0]
-            py = input_df["Supply_Risk_Score"].iloc[0]
-            ax.scatter(px, py, s=150, c="black", marker="X")
-            ax.set_title("Kraljic Matrix (point shows the item position)")
+
+            ax.text(1, 4.5, "Non-Critical", color="green")
+            ax.text(3.2, 4.5, "Leverage", color="blue")
+            ax.text(1, 1, "Bottleneck", color="orange")
+            ax.text(3.2, 1, "Strategic", color="red")
+
+            ax.scatter(profit_impact, supply_risk, s=150, c="black", marker="X")
             st.pyplot(fig)
 
-            # Recommendations
+            # recommendations
             st.subheader("Recommended Actions")
-            recs = recommendations_for_category(category)
-            for r in recs:
+            for r in recommendations_for_category(category):
                 st.write("•", r)
 
-            # Downloadable report (PDF or CSV fallback)
-            if FPDF_AVAILABLE:
-                pdf_bytes = create_pdf_report(input_df.iloc[0].to_dict(), category, proba[0] if proba is not None else None)
-                if pdf_bytes:
-                    st.download_button("📄 Download PDF Report", data=pdf_bytes, file_name=f"kraljic_report_{category}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf", mime="application/pdf")
-            else:
-                st.info("To enable PDF report download, add 'fpdf' to requirements.txt. For now, you can download CSV of the input.")
-                csv_bytes = input_df.to_csv(index=False).encode()
-                st.download_button("Download input as CSV", data=csv_bytes, file_name="kraljic_input.csv", mime="text/csv")
+            # simple CSV download
+            csv_bytes = input_df.to_csv(index=False).encode()
+            st.download_button("Download input data (CSV)", data=csv_bytes,
+                               file_name="kraljic_input.csv", mime="text/csv")
 
         except Exception as e:
             st.error(f"Prediction error: {e}")
 
 # ---------------------------
-# MAIN: Batch Mode
+# BATCH CSV MODE
 # ---------------------------
 else:
-    st.subheader("Batch Predictions (CSV)")
+    st.subheader("Batch Predictions")
+
+    uploaded_file = st.sidebar.file_uploader("Upload CSV", type=["csv"])
     if uploaded_file is None:
-        st.info("Upload a CSV file to run batch predictions. Use the sample CSV if you need a template.")
+        st.info("Upload a CSV to start batch processing.")
     else:
         try:
-            batch_df = pd.read_csv(uploaded_file)
-            st.write("First 5 rows of uploaded file:")
-            st.dataframe(batch_df.head())
+            df = pd.read_csv(uploaded_file)
+            st.write("Uploaded data preview:")
+            st.dataframe(df.head())
 
-            # Prepare data
-            prepared = prepare_input_df(batch_df)
+            prepared = prepare_input_df(df)
             preds, proba = predict_and_attach(prepared)
-            batch_df["Predicted_Kraljic_Category"] = preds
 
-            # If probabilities available, attach top probability
+            df["Predicted_Kraljic_Category"] = preds
+
             if proba is not None:
-                top_proba = np.max(proba, axis=1)
-                batch_df["Prediction_Confidence"] = top_proba
+                df["Prediction_Confidence"] = np.max(proba, axis=1)
 
-            st.success(f"Predicted {len(batch_df)} rows.")
-            st.dataframe(batch_df.head())
+            st.success(f"Predicted {len(df)} rows successfully.")
+            st.dataframe(df.head())
 
-            # Download results
-            out_csv = batch_df.to_csv(index=False).encode()
-            st.download_button("Download predictions (CSV)", data=out_csv, file_name="kraljic_batch_predictions.csv", mime="text/csv")
+            out_csv = df.to_csv(index=False).encode()
+            st.download_button("Download predictions (CSV)", data=out_csv,
+                               file_name="kraljic_predictions.csv",
+                               mime="text/csv")
 
-            # Simple summary chart
-            st.subheader("Prediction Distribution")
-            dist = batch_df["Predicted_Kraljic_Category"].value_counts()
-            st.bar_chart(dist)
-
-            # Option: Save to file in app folder (server)
-            if st.button("Save results to server (predictions.csv)"):
-                batch_df.to_csv("predictions.csv", index=False)
-                st.success("Saved as predictions.csv in app directory.")
+            st.subheader("Category Distribution")
+            st.bar_chart(df["Predicted_Kraljic_Category"].value_counts())
 
         except Exception as e:
-            st.error(f"Error processing file: {e}")
+            st.error(f"Error processing CSV: {e}")
 
 # ---------------------------
-# Footer: Notes & Requirements
+# Footer
 # ---------------------------
 st.markdown("---")
 st.caption(
-    "Notes: This app expects the model 'naive_bayes_model.pkl' in the same folder. "
-    "If you want PDF reports, add 'fpdf' to requirements.txt (pip install fpdf). "
-    "Make sure model was trained on features: " + ", ".join(model_columns)
+    "Kraljic Matrix Classifier — Clean Version • "
+    f"Model expects features: {', '.join(model_columns)}"
 )

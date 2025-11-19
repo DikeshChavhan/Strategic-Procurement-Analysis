@@ -5,154 +5,126 @@ import joblib
 import os
 import matplotlib.pyplot as plt
 
-# =========================================
-# APP CONFIG
-# =========================================
+# -------------------------------
+# CONFIG
+# -------------------------------
 st.set_page_config(page_title="Kraljic Matrix Classifier", layout="wide")
 
-# ============================
-# LANGUAGE PACKS
-# ============================
-LANG = {
+LANGUAGES = ["English", "Hindi", "Marathi"]
+
+# -------------------------------
+# LANGUAGE TEXT
+# -------------------------------
+TEXT = {
     "English": {
-        "title": "🧠 Kraljic Matrix Classification — AI Powered",
+        "title": "🧠 Kraljic Matrix Classifier — Smart Procurement Tool",
+        "desc": "A practical procurement classification app using the **Kraljic Matrix**. Includes Indian supplier regions, batch CSV upload, charts, recommendations, and a built-in AI assistant.",
         "about_title": "ℹ️ About This App",
         "about_text": """
-### 🌐 What is this app?
+### What This App Does
 
-This is an AI-powered **Kraljic Matrix Classification Tool** that helps procurement
-teams and businesses understand the risk & impact of purchased materials.
+This app helps procurement teams classify their items using the **Kraljic Matrix**, a strategic tool used worldwide.
 
-### 🧩 What is Kraljic Matrix?
+### Why You Need It
 
-The Kraljic Matrix classifies purchased items into four categories:
+✔ Identify high-risk or high-profit items  
+✔ Prioritise suppliers  
+✔ Improve sourcing strategies  
+✔ Reduce supply chain risks  
 
-- **Strategic** (High Risk, High Impact)  
-- **Leverage** (Low Risk, High Impact)  
-- **Bottleneck** (High Risk, Low Impact)  
-- **Non-Critical** (Low Risk, Low Impact)
+### Where You Use It  
+You can use this tool in:
 
-### 🎯 How this app helps?
-
-This tool:
-- Predicts the item category using your trained Naive Bayes Model  
-- Shows charts & quadrant visualization  
-- Provides procurement recommendations  
-- Supports **single item** & **batch CSV upload**  
-- Supports **English, Hindi, Marathi**  
-- Includes a built-in **AI Assistant**  
-
-### 🇮🇳 India-focused suppliers included:
-Maharashtra, Gujarat, Karnataka, Tamil Nadu, Delhi NCR, UP, Rajasthan, Punjab, Kerala etc.
-
-### 👤 Who should use this app?
-- Supply Chain Students  
-- Procurement Managers  
-- Manufacturing Units  
-- Researchers  
+- Manufacturing  
+- Retail  
+- Trading  
+- Logistics  
+- Indian supply chain operations  
+- Vendor management  
 """,
-        "assistant_title": "🤖 AI Procurement Assistant",
-        "assistant_placeholder": "Ask any procurement question..."
+        "assistant_title": "🤖 AI Assistant",
+        "assistant_placeholder": "Ask anything about procurement, supply chain, or the app…",
+        "assistant_button": "Ask AI",
     },
 
     "Hindi": {
-        "title": "🧠 क्रैलजिक मैट्रिक्स वर्गीकरण — एआई आधारित",
+        "title": "🧠 क्रालजिक मैट्रिक्स क्लासिफायर — स्मार्ट प्रोक्योरमेंट टूल",
+        "desc": "यह ऐप **Kraljic Matrix** का उपयोग करके खरीदारी वस्तुओं को श्रेणीबद्ध करता है। भारत-केन्द्रित सप्लायर क्षेत्र, CSV बैच अपलोड, चार्ट, सुझाव और एक AI सहायक शामिल है।",
         "about_title": "ℹ️ इस ऐप के बारे में",
         "about_text": """
-### 🌐 यह ऐप क्या करता है?
+### यह ऐप क्या करता है?
 
-यह एआई आधारित **Kraljic Matrix Classification Tool** खरीद (Procurement) में  
-जोखिम और प्रभाव का विश्लेषण करता है।
+यह ऐप आपकी खरीदारी वस्तुओं को **Kraljic Matrix** के आधार पर वर्गीकृत करता है।
 
-### 🧩 क्रैलजिक मैट्रिक्स क्या है?
+### यह क्यों जरूरी है?
 
-यह किसी भी खरीदे गए आइटम को चार श्रेणियों में बांटता है:
+✔ जोखिम वाले आइटम पहचानें  
+✔ सप्लायर प्राथमिकता तय करें  
+✔ बेहतर खरीद रणनीति बनाएं  
+✔ सप्लाई चेन जोखिम कम करें  
 
-- **Strategic** (उच्च जोखिम • उच्च प्रभाव)  
-- **Leverage** (कम जोखिम • उच्च प्रभाव)  
-- **Bottleneck** (उच्च जोखिम • कम प्रभाव)  
-- **Non-Critical** (कम जोखिम • कम प्रभाव)
-
-### 🎯 यह ऐप आपकी कैसे मदद करेगा?
-
-- AI मॉडल से सही वर्गीकरण  
-- चार्ट, विज़ुअल, रिकमेन्डेशन  
-- एकल या CSV बैच अपलोड  
-- **हिंदी, अंग्रेजी, मराठी** सपोर्ट  
-- बिल्ट-इन **एआई असिस्टेंट**  
-
-### 🇮🇳 भारत आधारित सप्लायर रीजन:
-महाराष्ट्र, गुजरात, कर्नाटक, दिल्ली NCR, तमिलनाडु आदि।
-
-### 👤 कौन उपयोग कर सकता है?
-- सप्लाई चेन छात्र  
-- प्रोक्योरमेंट मैनेजर  
-- मैन्युफैक्चरिंग यूनिट्स  
+### यह कहाँ उपयोग होता है?  
+- मैन्युफैक्चरिंग  
+- रिटेल  
+- ट्रेडिंग  
+- लॉजिस्टिक्स  
+- भारतीय सप्लाई चेन  
 """,
-        "assistant_title": "🤖 एआई प्रोक्योरमेंट असिस्टेंट",
-        "assistant_placeholder": "अपना सवाल पूछें..."
+        "assistant_title": "🤖 एआई सहायक",
+        "assistant_placeholder": "प्रोक्योरमेंट या इस ऐप के बारे में कुछ भी पूछें…",
+        "assistant_button": "पूछें",
     },
 
     "Marathi": {
-        "title": "🧠 क्रॅलजिक मॅट्रिक्स वर्गीकरण — एआय आधारित",
-        "about_title": "ℹ️ अॅप बद्दल माहिती",
+        "title": "🧠 क्रालजिक मॅट्रिक्स क्लासिफायर — स्मार्ट खरेदी साधन",
+        "desc": "हे अ‍ॅप **Kraljic Matrix** वापरून खरेदीची वस्तू वर्गीकृत करते. भारतीय सप्लायर क्षेत्र, CSV अपलोड, चार्ट, शिफारसी आणि एआय सहाय्यक समाविष्ट.",
+        "about_title": "ℹ️ अ‍ॅप बद्दल माहिती",
         "about_text": """
-### 🌐 हे अॅप काय करतो?
+### हे अ‍ॅप काय करते?
 
-हे एआय-आधारित **Kraljic Matrix Classification Tool** खरेदीत  
-जोखीम आणि प्रभाव समजण्यासाठी मदत करते.
+हे अ‍ॅप तुमच्या खरेदी वस्तूंचे **Kraljic Matrix** वर आधारित वर्गीकरण करते.
 
-### 🧩 क्रॅलजिक मॅट्रिक्स काय आहे?
+### का वापरावे?
 
-खरेदी केलेल्या वस्तू खालील 4 वर्गात मोडतात:
+✔ जास्त जोखमीची वस्तू ओळखा  
+✔ सप्लायरला प्राधान्य द्या  
+✔ खरेदी धोरण सुधारवा  
+✔ सप्लाय चेन रिस्क कमी करा  
 
-- **Strategic** (जास्त जोखीम • जास्त प्रभाव)  
-- **Leverage** (कमी जोखीम • जास्त प्रभाव)  
-- **Bottleneck** (जास्त जोखीम • कमी प्रभाव)  
-- **Non-Critical** (कमी जोखीम • कमी प्रभाव)
-
-### 🎯 या अॅपचे फायदे:
-
-- एआय मॉडेलवर आधारित अचूक भविष्यवाणी  
-- चार्ट, क्वाड्रंट, रिकमेन्डेशन्स  
-- एकल व CSV बॅच  
-- **मराठी, हिंदी, इंग्रजी** भाषा  
-- बिल्ट-इन **एआय असिस्टंट**  
-
-### 🇮🇳 भारतातील पुरवठादार प्रदेश:
-महाराष्ट्र, गुजरात, कर्नाटक, दिल्ली NCR, तामिळनाडू इत्यादी.
-
-### 👤 कोण वापरू शकतो?
-- सप्लाय चेन विद्यार्थी  
-- प्रोक्योरमेंट मॅनेजर  
-- उद्योग  
+### कुठे वापरू शकता?  
+- मॅन्युफॅक्चरिंग  
+- रिटेल  
+- ट्रेडिंग  
+- लॉजिस्टिक्स  
 """,
-        "assistant_title": "🤖 एआय प्रोक्योरमेंट सहाय्यक",
-        "assistant_placeholder": "प्रश्न विचारा..."
+        "assistant_title": "🤖 एआय सहाय्यक",
+        "assistant_placeholder": "खरेदी किंवा अ‍ॅप बद्दल काहीही विचारा…",
+        "assistant_button": "विचारा",
     }
 }
 
-# =========================================
-# SIDEBAR — LANGUAGE + NAVIGATION
-# =========================================
-st.sidebar.title("🌐 Language / भाषा / भाषा")
-language = st.sidebar.selectbox("Select Language", ["English", "Hindi", "Marathi"])
-T = LANG[language]
+# -------------------------------
+# SIDEBAR OPTIONS
+# -------------------------------
+st.sidebar.title("Settings")
 
-page = st.sidebar.radio("Navigate", ["Home", "AI Assistant", "About App"])
+language = st.sidebar.selectbox("Choose Language", LANGUAGES)
 
+page = st.sidebar.radio("Navigate", ["Home", "About", "AI Assistant"])
 
-# =========================================
-# LOAD YOUR MODEL
-# =========================================
+# -------------------------------
+# LOAD MODEL
+# -------------------------------
 MODEL_PATH = "naive_bayes_model.pkl"
+MODEL_COLUMNS_PATH = "model_columns.pkl"
+
 if not os.path.exists(MODEL_PATH):
-    st.error("❌ Model file missing!")
+    st.error("❌ Model file not found.")
     st.stop()
 
 model = joblib.load(MODEL_PATH)
 
-model_columns = [
+default_columns = [
     "Lead_Time_Days",
     "Order_Volume_Units",
     "Cost_per_Unit",
@@ -162,62 +134,161 @@ model_columns = [
     "Single_Source_Risk"
 ]
 
-REGIONS = [
-    "Maharashtra", "Gujarat", "Karnataka", "Delhi NCR", "Tamil Nadu",
-    "West Bengal", "Rajasthan", "Uttar Pradesh", "Kerala", "Punjab",
-    "China", "Bangladesh", "GCC", "USA", "Europe", "Other"
-]
+if os.path.exists(MODEL_COLUMNS_PATH):
+    model_columns = list(joblib.load(MODEL_COLUMNS_PATH))
+else:
+    model_columns = default_columns
 
-# =========================================
-# HELPER FUNCTIONS
-# =========================================
+# -------------------------------
+# FUNCTIONS
+# -------------------------------
 def prepare_input(df):
-    df = df.copy()
-    if "Single_Source_Risk" in df:
-        df["Single_Source_Risk"] = df["Single_Source_Risk"].map({"Yes": 1, "No": 0}).fillna(df["Single_Source_Risk"])
-    return df[model_columns]
+    if "Supplier_Region" in df.columns:
+        df = df.drop(columns=["Supplier_Region"])
 
+    df["Single_Source_Risk"] = df["Single_Source_Risk"].map({"Yes": 1, "No": 0})
 
-def assistant_reply(q):
-    q = q.lower()
+    return df.reindex(columns=model_columns, fill_value=0)
 
-    if "supplier" in q:
-        return "A good supplier should have low risk, good lead time, and stable pricing."
-    if "risk" in q:
-        return "Risk increases with higher lead time, poor reliability, or single-source dependency."
-    if "strategic" in q:
-        return "Strategic items need long-term relations and strong collaboration."
-    if "hello" in q or "hi" in q:
-        return "Hello! How can I help you with procurement today?"
+def recommendations(cat):
+    recs = {
+        "Strategic": [
+            "Develop long-term supplier partnerships.",
+            "Joint forecasting & risk management.",
+            "Supplier development programs."
+        ],
+        "Leverage": [
+            "Competitive bidding.",
+            "Volume consolidation.",
+            "Aggressive negotiation."
+        ],
+        "Bottleneck": [
+            "Identify backup suppliers.",
+            "Increase safety stock.",
+            "Explore material alternatives."
+        ],
+        "Non-Critical": [
+            "Automate purchasing.",
+            "Use long contracts.",
+            "Focus on process efficiency."
+        ]
+    }
+    return recs.get(cat, ["No recommendation."])
 
-    return "I am not fully sure, but this seems related to procurement or supply chain."
+def chat_ai(message):
+    # Simple rule-based AI (no external API required)
+    if "risk" in message.lower():
+        return "Risk depends on supplier reliability, lead time, and market volatility."
+    if "kraljic" in message.lower():
+        return "The Kraljic Matrix classifies items into: Strategic, Leverage, Bottleneck, and Non-critical."
+    return "Thanks for your question! Based on procurement best practices, I recommend analysing supply risk and profit impact."
 
-# =========================================
-# PAGE 1 — HOME (Your original prediction UI)
-# =========================================
-if page == "Home":
-    st.title(T["title"])
+# -------------------------------
+# PAGE: ABOUT
+# -------------------------------
+if page == "About":
+    st.title(TEXT[language]["about_title"])
+    st.markdown(TEXT[language]["about_text"])
 
-    # Your entire original Single Item + Batch UI will be placed here
-    # (I can merge it for you exactly once you confirm structure)
-
-    st.info("Your home prediction page content remains here. (Same as your original code)")
-
-# =========================================
-# PAGE 2 — AI ASSISTANT
-# =========================================
+# -------------------------------
+# PAGE: AI ASSISTANT
+# -------------------------------
 elif page == "AI Assistant":
-    st.title(T["assistant_title"])
+    st.title(TEXT[language]["assistant_title"])
 
-    user_q = st.text_input(T["assistant_placeholder"])
+    user_q = st.text_input(TEXT[language]["assistant_placeholder"])
+    if st.button(TEXT[language]["assistant_button"]):
+        if user_q.strip() == "":
+            st.warning("Please enter a question.")
+        else:
+            answer = chat_ai(user_q)
+            st.success(answer)
 
-    if user_q:
-        st.write("**You:**", user_q)
-        st.write("**Assistant:**", assistant_reply(user_q))
+# -------------------------------
+# PAGE: HOME (FULL APP)
+# -------------------------------
+else:
+    st.title(TEXT[language]["title"])
+    st.markdown(TEXT[language]["desc"])
 
-# =========================================
-# PAGE 3 — ABOUT APP
-# =========================================
-elif page == "About App":
-    st.title(T["about_title"])
-    st.markdown(T["about_text"])
+    st.markdown("## 🔽 Prediction Options")
+    mode = st.radio("Choose Mode", ["Single Item", "Batch CSV"])
+
+    REGIONS = [
+        "Maharashtra", "Gujarat", "Karnataka", "Delhi NCR", "Tamil Nadu",
+        "West Bengal", "Rajasthan", "Uttar Pradesh", "Kerala", "Punjab",
+        "China", "Bangladesh", "GCC", "USA", "Europe", "Other"
+    ]
+
+    # -----------------------
+    # SINGLE ITEM MODE
+    # -----------------------
+    if mode == "Single Item":
+        lead = st.number_input("Lead Time (Days)", 0, 3650, 30)
+        vol = st.number_input("Order Volume (Units)", 1, 10_000_000, 500)
+        cost = st.number_input("Cost per Unit", 1.0, 10_000_000.0, 250.0)
+        risk = st.slider("Supply Risk", 1, 5, 3)
+        impact = st.slider("Profit Impact", 1, 5, 3)
+        env = st.slider("Environmental Impact", 1, 5, 2)
+        ss = st.selectbox("Single Source Risk", ["Yes", "No"])
+        region = st.selectbox("Supplier Region", REGIONS)
+
+        df = pd.DataFrame({
+            "Lead_Time_Days": [lead],
+            "Order_Volume_Units": [vol],
+            "Cost_per_Unit": [cost],
+            "Supply_Risk_Score": [risk],
+            "Profit_Impact_Score": [impact],
+            "Environmental_Impact": [env],
+            "Single_Source_Risk": [ss],
+            "Supplier_Region": [region]
+        })
+
+        st.subheader("Input Summary")
+        st.table(df.T)
+
+        if st.button("Predict"):
+            prepared = prepare_input(df)
+            pred = model.predict(prepared)[0]
+            proba = model.predict_proba(prepared)[0]
+
+            st.success(f"Predicted Category: **{pred}**")
+
+            st.subheader("Confidence")
+            st.bar_chart(pd.Series(proba, index=model.classes_))
+
+            st.subheader("Recommended Actions")
+            for r in recommendations(pred):
+                st.write("•", r)
+
+            # Quadrant chart
+            st.subheader("Kraljic Matrix Position")
+            fig, ax = plt.subplots(figsize=(6, 6))
+            ax.set_xlim(0.5, 5.5)
+            ax.set_ylim(0.5, 5.5)
+            ax.axvline(3, color="gray", linestyle="--")
+            ax.axhline(3, color="gray", linestyle="--")
+            ax.scatter(impact, risk, s=200, color="black")
+            st.pyplot(fig)
+
+    # -----------------------
+    # BATCH MODE
+    # -----------------------
+    else:
+        file = st.file_uploader("Upload CSV", type=["csv"])
+        if file:
+            df = pd.read_csv(file)
+            st.dataframe(df.head())
+
+            prepared = prepare_input(df)
+            preds = model.predict(prepared)
+
+            df["Predicted_Category"] = preds
+            st.subheader("Results")
+            st.dataframe(df)
+
+            st.download_button("Download CSV", df.to_csv(index=False).encode(),
+                               "predictions.csv", "text/csv")
+
+            st.subheader("Category Distribution")
+            st.bar_chart(df["Predicted_Category"].value_counts())

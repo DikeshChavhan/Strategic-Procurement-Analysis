@@ -4,6 +4,4 @@ numpy
 scikit-learn
 joblib
 matplotlib
-sentence-transformers
-langchain
-langchain-community
+huggingface-hub

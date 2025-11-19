@@ -38,11 +38,13 @@ supply_risk = st.sidebar.slider("Supply Risk Score (1 = Low, 5 = High)", 1, 5, 3
 profit_impact = st.sidebar.slider("Profit Impact Score (1 = Low, 5 = High)", 1, 5, 3)
 env_impact = st.sidebar.slider("Environmental Impact Score (1 = Low, 5 = High)", 1, 5, 2)
 
+# Region was removed because model did NOT train on it
 region = st.sidebar.selectbox("Supplier Region", ["Asia", "Europe", "Africa", "North America", "South America"])
+
 single_source = st.sidebar.selectbox("Single Source Risk?", ["Yes", "No"])
 
 # ---------------------------
-# Prepare input data
+# Prepare Input Data
 # ---------------------------
 input_data = pd.DataFrame({
     "Lead_Time_Days": [lead_time],
@@ -51,8 +53,8 @@ input_data = pd.DataFrame({
     "Supply_Risk_Score": [supply_risk],
     "Profit_Impact_Score": [profit_impact],
     "Environmental_Impact": [env_impact],
-    "Supplier_Region": [region],
-    "Single_Source_Risk": [single_source]
+    # Convert Yes/No to 1/0 (same as training dataset)
+    "Single_Source_Risk": [1 if single_source == "Yes" else 0]
 })
 
 st.subheader("🔍 Input Summary")
@@ -63,8 +65,21 @@ st.write(input_data)
 # ---------------------------
 if st.sidebar.button("Predict Category"):
     try:
+        # Keep ONLY the features used during model training
+        input_data = input_data[[
+            "Lead_Time_Days",
+            "Order_Volume_Units",
+            "Cost_per_Unit",
+            "Supply_Risk_Score",
+            "Profit_Impact_Score",
+            "Environmental_Impact",
+            "Single_Source_Risk"
+        ]]
+
         prediction = model.predict(input_data)[0]
+
         st.success(f"### 🧩 Predicted Kraljic Category: **{prediction}**")
+
     except Exception as e:
         st.error(f"⚠️ Prediction error: {str(e)}")
 

@@ -1,7 +1,13 @@
 streamlit
+
 pandas
+
 numpy
+
 scikit-learn
+
 joblib
+
 matplotlib
-seaborn
+
+fpdf (optional, for PDF export)

@@ -4,7 +4,6 @@ numpy
 scikit-learn
 joblib
 matplotlib
-sqlite3   # builtin; do not include if pip complains — it's in stdlib
-transformers    # optional, for local LLM (install only if you plan to use LLM)
-torch           # optional, required by many transformers models
-sentencepiece   # optional, for some tokenizer models
+sentence-transformers
+langchain
+langchain-community
